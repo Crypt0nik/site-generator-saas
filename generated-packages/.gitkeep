@@ -1,0 +1,4 @@
+# Keep this directory for generated installation scripts
+# Files in this directory are created dynamically by the generator
+
+*.sh

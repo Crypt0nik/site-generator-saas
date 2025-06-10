@@ -1,0 +1,51 @@
+{
+  "name": "site-generator-saas",
+  "version": "1.0.0",
+  "description": "Générateur SAAS de sites e-commerce avec panel d'administration intégré",
+  "keywords": [
+    "saas",
+    "e-commerce",
+    "generator",
+    "laravel",
+    "nextjs",
+    "admin-panel",
+    "templates",
+    "typescript"
+  ],
+  "author": "Arthur",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/votre-username/site-generator-saas.git"
+  },
+  "bugs": {
+    "url": "https://github.com/votre-username/site-generator-saas/issues"
+  },
+  "homepage": "https://github.com/votre-username/site-generator-saas#readme",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "scripts": {
+    "dev:api": "cd api && npm run dev",
+    "dev:web": "cd web && npm run dev",
+    "dev:all": "concurrently \"npm run dev:api\" \"npm run dev:web\"",
+    "build:api": "cd api && npm run build",
+    "build:web": "cd web && npm run build",
+    "build:all": "npm run build:api && npm run build:web",
+    "start:api": "cd api && npm start",
+    "start:web": "cd web && npm start",
+    "test": "bash test-templates-admin.sh",
+    "test:demo": "bash demo-finale-complete.sh",
+    "test:integration": "bash test-integration.sh",
+    "lint": "cd web && npm run lint && cd ../api && npm run lint",
+    "format": "cd web && npm run format && cd ../api && npm run format"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "workspaces": [
+    "api",
+    "web"
+  ]
+}
