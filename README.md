@@ -14,6 +14,10 @@
 
 [🎯 Démo Live](#-démo-en-ligne) • [📖 Documentation](#-documentation) • [🚀 Installation](#-installation-rapide) • [🎨 Templates](#-templates-disponibles)
 
+---
+
+**Créé par [Crypt0nik](https://github.com/Crypt0nik) • Publié le 10 juin 2025**
+
 </div>
 
 ---

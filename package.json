@@ -12,16 +12,16 @@
     "templates",
     "typescript"
   ],
-  "author": "Arthur",
+  "author": "Arthur (Crypt0nik)",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/votre-username/site-generator-saas.git"
+    "url": "https://github.com/Crypt0nik/site-generator-saas.git"
   },
   "bugs": {
-    "url": "https://github.com/votre-username/site-generator-saas/issues"
+    "url": "https://github.com/Crypt0nik/site-generator-saas/issues"
   },
-  "homepage": "https://github.com/votre-username/site-generator-saas#readme",
+  "homepage": "https://github.com/Crypt0nik/site-generator-saas#readme",
   "engines": {
     "node": ">=18.0.0",
     "npm": ">=8.0.0"
