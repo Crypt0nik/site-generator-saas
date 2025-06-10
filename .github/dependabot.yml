@@ -1,0 +1,72 @@
+version: 2
+updates:
+  # Mise à jour des dépendances npm pour l'API
+  - package-ecosystem: "npm"
+    directory: "/api"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "arthur"
+    assignees:
+      - "arthur"
+    commit-message:
+      prefix: "⬆️"
+      prefix-development: "⬆️ [DEV]"
+    labels:
+      - "dependencies"
+      - "api"
+
+  # Mise à jour des dépendances npm pour le Web
+  - package-ecosystem: "npm"
+    directory: "/web"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "arthur"
+    assignees:
+      - "arthur"
+    commit-message:
+      prefix: "⬆️"
+      prefix-development: "⬆️ [DEV]"
+    labels:
+      - "dependencies"
+      - "web"
+
+  # Mise à jour des dépendances npm racine
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "arthur"
+    assignees:
+      - "arthur"
+    commit-message:
+      prefix: "⬆️"
+      prefix-development: "⬆️ [DEV]"
+    labels:
+      - "dependencies"
+      - "root"
+
+  # Mise à jour des actions GitHub
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 3
+    reviewers:
+      - "arthur"
+    assignees:
+      - "arthur"
+    commit-message:
+      prefix: "⬆️"
+    labels:
+      - "dependencies"
+      - "github-actions"
