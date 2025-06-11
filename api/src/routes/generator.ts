@@ -277,18 +277,368 @@ class DatabaseSeeder extends Seeder
 }
 EOF
     
-    # Corriger la route web pour afficher une vraie page au lieu d'une API
+    # Créer les routes web avec administration
     cat > routes/web.php << 'EOF'
 <?php
 
 use Illuminate\\Support\\Facades\\Route;
+use App\\Http\\Controllers\\Admin\\ContentController;
 
+// Route principale
 Route::get('/', function () {
     return view('welcome');
 });
+
+// Routes d'administration (nécessitent une authentification)
+Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/', function () {
+        return redirect()->route('admin.content.index');
+    });
+    
+    Route::get('/content', [ContentController::class, 'index'])->name('content.index');
+    Route::put('/content', [ContentController::class, 'update'])->name('content.update');
+});
+
+// Inclure les routes d'authentification si disponibles
+if (file_exists(base_path('routes/auth.php'))) {
+    require base_path('routes/auth.php');
+}
 EOF
     
     log_success "Modèle User et routes corrigés!"
+}
+
+# Créer le système de gestion de contenu éditable
+create_content_management() {
+    log_info "Création du système de gestion de contenu éditable..."
+    
+    # Créer le modèle SiteContent
+    cat > app/Models/SiteContent.php << 'EOF'
+<?php
+
+namespace App\\Models;
+
+use Illuminate\\Database\\Eloquent\\Factories\\HasFactory;
+use Illuminate\\Database\\Eloquent\\Model;
+
+class SiteContent extends Model
+{
+    use HasFactory;
+
+    protected $table = 'site_contents';
+
+    protected $fillable = [
+        'section',
+        'key', 
+        'value',
+        'type'
+    ];
+
+    protected $casts = [
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime'
+    ];
+
+    public static function get($section, $key, $default = '')
+    {
+        $content = self::where('section', $section)
+                      ->where('key', $key)
+                      ->first();
+        
+        return $content ? $content->value : $default;
+    }
+    
+    public static function set($section, $key, $value, $type = 'text')
+    {
+        return self::updateOrCreate(
+            ['section' => $section, 'key' => $key],
+            ['value' => $value, 'type' => $type]
+        );
+    }
+}
+EOF
+
+    # Créer la migration pour site_contents
+    cat > database/migrations/2024_01_01_000001_create_site_contents_table.php << 'EOF'
+<?php
+
+use Illuminate\\Database\\Migrations\\Migration;
+use Illuminate\\Database\\Schema\\Blueprint;
+use Illuminate\\Support\\Facades\\Schema;
+
+return new class extends Migration
+{
+    public function up()
+    {
+        Schema::create('site_contents', function (Blueprint $table) {
+            $table->id();
+            $table->string('section')->index(); // 'hero', 'features', 'cta', etc.
+            $table->string('key'); // 'title', 'subtitle', 'description', etc.
+            $table->text('value'); // Le contenu éditable
+            $table->string('type')->default('text'); // 'text', 'textarea', 'html'
+            $table->timestamps();
+            
+            $table->unique(['section', 'key']);
+        });
+    }
+
+    public function down()
+    {
+        Schema::dropIfExists('site_contents');
+    }
+};
+EOF
+
+    # Créer le seeder pour site_contents avec contenu par défaut
+    cat > database/seeders/SiteContentSeeder.php << 'EOF'
+<?php
+
+namespace Database\\Seeders;
+
+use App\\Models\\SiteContent;
+use Illuminate\\Database\\Seeder;
+
+class SiteContentSeeder extends Seeder
+{
+    public function run()
+    {
+        $contents = [
+            // Section Hero
+            ['section' => 'hero', 'key' => 'title', 'value' => 'Welcome to ${config.name}', 'type' => 'text'],
+            ['section' => 'hero', 'key' => 'subtitle', 'value' => 'Your premier destination for innovative solutions', 'type' => 'textarea'],
+            ['section' => 'hero', 'key' => 'cta_primary', 'value' => 'Explore Products', 'type' => 'text'],
+            ['section' => 'hero', 'key' => 'cta_secondary', 'value' => 'Learn More', 'type' => 'text'],
+            
+            // Section Features
+            ['section' => 'features', 'key' => 'title', 'value' => 'Why Choose ${config.name}?', 'type' => 'text'],
+            ['section' => 'features', 'key' => 'subtitle', 'value' => 'Innovative solutions tailored to your needs', 'type' => 'text'],
+            
+            // Features individuelles
+            ['section' => 'feature_1', 'key' => 'title', 'value' => 'Lightning Fast', 'type' => 'text'],
+            ['section' => 'feature_1', 'key' => 'description', 'value' => 'Experience unparalleled speed and performance', 'type' => 'textarea'],
+            
+            ['section' => 'feature_2', 'key' => 'title', 'value' => 'Reliable', 'type' => 'text'],
+            ['section' => 'feature_2', 'key' => 'description', 'value' => 'Count on our robust infrastructure', 'type' => 'textarea'],
+            
+            ['section' => 'feature_3', 'key' => 'title', 'value' => 'User-Friendly', 'type' => 'text'],
+            ['section' => 'feature_3', 'key' => 'description', 'value' => 'Intuitive design and seamless experience', 'type' => 'textarea'],
+            
+            // Section CTA finale
+            ['section' => 'cta', 'key' => 'title', 'value' => 'Ready to Get Started?', 'type' => 'text'],
+            ['section' => 'cta', 'key' => 'description', 'value' => 'Join thousands of satisfied customers', 'type' => 'textarea'],
+            ['section' => 'cta', 'key' => 'button', 'value' => 'Start Your Journey Today', 'type' => 'text'],
+        ];
+        
+        foreach ($contents as $content) {
+            SiteContent::create($content);
+        }
+    }
+}
+EOF
+
+    # Créer le contrôleur d'administration pour la gestion de contenu
+    mkdir -p app/Http/Controllers/Admin
+    cat > app/Http/Controllers/Admin/ContentController.php << 'EOF'
+<?php
+
+namespace App\\Http\\Controllers\\Admin;
+
+use App\\Http\\Controllers\\Controller;
+use App\\Models\\SiteContent;
+use Illuminate\\Http\\Request;
+
+class ContentController extends Controller
+{
+    /**
+     * Afficher la page de gestion du contenu
+     */
+    public function index()
+    {
+        $contents = SiteContent::orderBy('section')->orderBy('key')->get()->groupBy('section');
+        return view('admin.content.index', compact('contents'));
+    }
+    
+    /**
+     * Mettre à jour le contenu du site
+     */
+    public function update(Request $request)
+    {
+        $request->validate([
+            'contents' => 'required|array',
+            'contents.*.section' => 'required|string',
+            'contents.*.key' => 'required|string',
+            'contents.*.value' => 'required|string',
+            'contents.*.type' => 'required|string',
+        ]);
+        
+        foreach ($request->contents as $content) {
+            SiteContent::set(
+                $content['section'],
+                $content['key'],
+                $content['value'],
+                $content['type']
+            );
+        }
+        
+        return redirect()->back()->with('success', 'Contenu mis à jour avec succès !');
+    }
+}
+EOF
+
+    # Créer le layout d'administration
+    mkdir -p resources/views/admin
+    cat > resources/views/admin/layout.blade.php << 'EOF'
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administration - ${config.name}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '${config.primaryColor}',
+                        secondary: '${config.secondaryColor}',
+                        accent: '${config.accentColor}'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-100">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <h1 class="text-xl font-bold" style="color: ${config.primaryColor}">Admin - ${config.name}</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="/" class="text-gray-700 hover:text-gray-900">Voir le site</a>
+                    <a href="/admin/content" class="text-gray-700 hover:text-gray-900">Gérer le contenu</a>
+                    <form method="POST" action="{{ route('logout') }}" class="inline">
+                        @csrf
+                        <button type="submit" class="text-gray-700 hover:text-gray-900">Déconnexion</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Content -->
+    <div class="py-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="mb-6">
+                <h1 class="text-2xl font-bold text-gray-900">@yield('title')</h1>
+            </div>
+            
+            @if(session('success'))
+                <div class="mb-6 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+                    {{ session('success') }}
+                </div>
+            @endif
+            
+            @yield('content')
+        </div>
+    </div>
+</body>
+</html>
+EOF
+
+    # Créer la vue d'administration pour éditer les contenus
+    mkdir -p resources/views/admin/content
+    cat > resources/views/admin/content/index.blade.php << 'EOF'
+@extends('admin.layout')
+
+@section('title', 'Gestion du Contenu')
+
+@section('content')
+<div class="bg-white rounded-lg shadow-md">
+    <div class="px-6 py-4 border-b border-gray-200">
+        <h2 class="text-xl font-semibold text-gray-800">Éditer le Contenu du Site</h2>
+        <p class="text-gray-600 mt-1">Modifiez les textes qui apparaissent sur votre site web</p>
+    </div>
+    
+    <form action="{{ route('admin.content.update') }}" method="POST" class="p-6">
+        @csrf
+        @method('PUT')
+        
+        @foreach($contents as $section => $sectionContents)
+        <div class="mb-8">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 capitalize border-b pb-2" style="border-color: ${config.primaryColor}">
+                Section : {{ str_replace('_', ' ', $section) }}
+            </h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                @foreach($sectionContents as $index => $content)
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700 capitalize">
+                        {{ str_replace('_', ' ', $content->key) }}
+                    </label>
+                    
+                    <input type="hidden" name="contents[{{ $section }}_{{ $index }}][section]" value="{{ $content->section }}">
+                    <input type="hidden" name="contents[{{ $section }}_{{ $index }}][key]" value="{{ $content->key }}">
+                    <input type="hidden" name="contents[{{ $section }}_{{ $index }}][type]" value="{{ $content->type }}">
+                    
+                    @if($content->type === 'textarea')
+                        <textarea 
+                            name="contents[{{ $section }}_{{ $index }}][value]"
+                            rows="3"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >{{ $content->value }}</textarea>
+                    @else
+                        <input 
+                            type="text"
+                            name="contents[{{ $section }}_{{ $index }}][value]"
+                            value="{{ $content->value }}"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                    @endif
+                </div>
+                @endforeach
+            </div>
+        </div>
+        @endforeach
+        
+        <div class="flex justify-end border-t pt-6">
+            <button type="submit" class="text-white px-6 py-2 rounded-md hover:opacity-90 transition-opacity" style="background-color: ${config.primaryColor}">
+                Mettre à jour le contenu
+            </button>
+        </div>
+    </form>
+</div>
+@endsection
+EOF
+
+    # Mettre à jour le DatabaseSeeder pour inclure SiteContentSeeder
+    cat > database/seeders/DatabaseSeeder.php << 'EOF'
+<?php
+
+namespace Database\\Seeders;
+
+use App\\Models\\User;
+use Illuminate\\Database\\Seeder;
+
+class DatabaseSeeder extends Seeder
+{
+    public function run(): void
+    {
+        User::factory()->create([
+            'username' => 'Test User',
+            'email' => 'test@example.com',
+        ]);
+        
+        // Ajouter le seeder pour le contenu du site
+        $this->call(SiteContentSeeder::class);
+    }
+}
+EOF
+
+    log_success "Système de gestion de contenu créé!"
 }
 
 # Appliquer le template personnalisé
@@ -299,6 +649,10 @@ apply_template() {
     case "${config.template}" in
         "modern-saas")
             cat > resources/views/welcome.blade.php << 'TEMPLATE_EOF'
+@php
+use App\\Models\\SiteContent;
+@endphp
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -330,7 +684,7 @@ apply_template() {
                 </div>
                 <div class="flex items-center space-x-4">
                     @auth
-                        <a href="/dashboard" class="text-gray-300 hover:text-white">Dashboard</a>
+                        <a href="/admin" class="text-gray-300 hover:text-white">Admin</a>
                         <form method="POST" action="{{ route('logout') }}" class="inline">
                             @csrf
                             <button type="submit" class="text-gray-300 hover:text-white">Logout</button>
@@ -349,18 +703,17 @@ apply_template() {
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
             <div class="text-center">
                 <h1 class="text-4xl md:text-6xl font-bold mb-6">
-                    Welcome to <span style="color: ${config.primaryColor}">${config.name}</span>
+                    {!! SiteContent::get('hero', 'title', 'Welcome to ${config.name}') !!}
                 </h1>
                 <p class="text-xl text-gray-300 mb-8 max-w-3xl mx-auto">
-                    Your premier destination for innovative solutions and exceptional service. 
-                    Discover what makes us the leader in our industry.
+                    {!! SiteContent::get('hero', 'subtitle', 'Your premier destination for innovative solutions and exceptional service.') !!}
                 </p>
                 <div class="flex flex-col sm:flex-row gap-4 justify-center">
                     <a href="/products" class="px-8 py-3 rounded-lg text-white font-semibold text-lg transition-all duration-300 hover:scale-105" style="background-color: ${config.primaryColor}">
-                        Explore Products
+                        {!! SiteContent::get('hero', 'cta_primary', 'Explore Products') !!}
                     </a>
                     <a href="/about" class="px-8 py-3 rounded-lg border-2 text-white font-semibold text-lg transition-all duration-300 hover:bg-white hover:text-gray-900" style="border-color: ${config.secondaryColor}">
-                        Learn More
+                        {!! SiteContent::get('hero', 'cta_secondary', 'Learn More') !!}
                     </a>
                 </div>
             </div>
@@ -371,37 +724,39 @@ apply_template() {
     <div class="py-24 bg-gray-800">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center mb-16">
-                <h2 class="text-3xl md:text-4xl font-bold mb-4">Why Choose ${config.name}?</h2>
-                <p class="text-xl text-gray-300">Innovative solutions tailored to your needs</p>
+                <h2 class="text-3xl md:text-4xl font-bold mb-4">
+                    {!! SiteContent::get('features', 'title', 'Why Choose ${config.name}?') !!}
+                </h2>
+                <p class="text-xl text-gray-300">
+                    {!! SiteContent::get('features', 'subtitle', 'Innovative solutions tailored to your needs') !!}
+                </p>
             </div>
             <div class="grid md:grid-cols-3 gap-8">
+                @for($i = 1; $i <= 3; $i++)
                 <div class="text-center p-6 rounded-lg bg-gray-700">
                     <div class="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center" style="background-color: ${config.accentColor}">
-                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                        </svg>
+                        @if($i == 1)
+                            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            </svg>
+                        @elseif($i == 2)
+                            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        @else
+                            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                            </svg>
+                        @endif
                     </div>
-                    <h3 class="text-xl font-semibold mb-2">Lightning Fast</h3>
-                    <p class="text-gray-300">Experience unparalleled speed and performance with our cutting-edge technology.</p>
+                    <h3 class="text-xl font-semibold mb-2">
+                        {!! SiteContent::get('feature_' . $i, 'title', 'Feature ' . $i) !!}
+                    </h3>
+                    <p class="text-gray-300">
+                        {!! SiteContent::get('feature_' . $i, 'description', 'Description ' . $i) !!}
+                    </p>
                 </div>
-                <div class="text-center p-6 rounded-lg bg-gray-700">
-                    <div class="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center" style="background-color: ${config.accentColor}">
-                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                    </div>
-                    <h3 class="text-xl font-semibold mb-2">Reliable</h3>
-                    <p class="text-gray-300">Count on our robust infrastructure and 99.9% uptime guarantee.</p>
-                </div>
-                <div class="text-center p-6 rounded-lg bg-gray-700">
-                    <div class="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center" style="background-color: ${config.accentColor}">
-                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
-                        </svg>
-                    </div>
-                    <h3 class="text-xl font-semibold mb-2">User-Friendly</h3>
-                    <p class="text-gray-300">Intuitive design and seamless user experience across all devices.</p>
-                </div>
+                @endfor
             </div>
         </div>
     </div>
@@ -409,10 +764,14 @@ apply_template() {
     <!-- CTA Section -->
     <div class="py-24">
         <div class="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
-            <h2 class="text-3xl md:text-4xl font-bold mb-4">Ready to Get Started?</h2>
-            <p class="text-xl text-gray-300 mb-8">Join thousands of satisfied customers who trust ${config.name} for their business needs.</p>
+            <h2 class="text-3xl md:text-4xl font-bold mb-4">
+                {!! SiteContent::get('cta', 'title', 'Ready to Get Started?') !!}
+            </h2>
+            <p class="text-xl text-gray-300 mb-8">
+                {!! SiteContent::get('cta', 'description', 'Join thousands of satisfied customers who trust ${config.name} for their business needs.') !!}
+            </p>
             <a href="/register" class="inline-block px-8 py-4 rounded-lg text-white font-semibold text-lg transition-all duration-300 hover:scale-105" style="background-color: ${config.primaryColor}">
-                Start Your Journey Today
+                {!! SiteContent::get('cta', 'button', 'Start Your Journey Today') !!}
             </a>
         </div>
     </div>
@@ -943,6 +1302,8 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::get('/orders', [AdminController::class, 'orders'])->name('orders');
     Route::get('/customers', [AdminController::class, 'customers'])->name('customers');
     Route::get('/settings', [AdminController::class, 'settings'])->name('settings');
+    Route::get('/content', [AdminController::class, 'content'])->name('content');
+    Route::put('/content', [AdminController::class, 'updateContent'])->name('content.update');
 });
 ADMIN_ROUTES_EOF
 
@@ -954,6 +1315,7 @@ namespace App\\Http\\Controllers;
 
 use Illuminate\\Http\\Request;
 use App\\Models\\User;
+use App\\Models\\SiteContent;
 
 class AdminController extends Controller
 {
@@ -989,6 +1351,26 @@ class AdminController extends Controller
     {
         \$config = config('brand');
         return view('admin.settings', compact('config'));
+    }
+    
+    public function content()
+    {
+        \$contents = \\App\\Models\\SiteContent::orderBy('section')->orderBy('key')->get()->groupBy('section');
+        return view('admin.content', compact('contents'));
+    }
+    
+    public function updateContent(Request \$request)
+    {
+        \$contents = \$request->input('contents', []);
+        
+        foreach (\$contents as \$key => \$content) {
+            if (isset(\$content['id'], \$content['value'])) {
+                \\App\\Models\\SiteContent::where('id', \$content['id'])
+                    ->update(['value' => \$content['value']]);
+            }
+        }
+        
+        return redirect()->route('admin.content')->with('success', 'Contenu mis à jour avec succès!');
     }
 }
 ADMIN_CONTROLLER_EOF
@@ -1109,6 +1491,12 @@ AUTH_CONTROLLER_EOF
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
                     </svg>
                     Clients
+                </a>
+                <a href="{{ route('admin.content') }}" class="flex items-center px-6 py-3 text-gray-700 hover:bg-gray-50 hover:text-primary {{ request()->routeIs('admin.content') ? 'bg-primary/10 text-primary border-r-2 border-primary' : '' }}">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                    </svg>
+                    Contenu
                 </a>
                 <a href="{{ route('admin.settings') }}" class="flex items-center px-6 py-3 text-gray-700 hover:bg-gray-50 hover:text-primary {{ request()->routeIs('admin.settings') ? 'bg-primary/10 text-primary border-r-2 border-primary' : '' }}">
                     <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1482,6 +1870,102 @@ CUSTOMERS_EOF
 @endsection
 SETTINGS_EOF
 
+    # Vue de gestion de contenu
+    cat > resources/views/admin/content.blade.php << 'CONTENT_EOF'
+@extends('admin.layout')
+
+@section('title', 'Gestion du Contenu')
+
+@section('content')
+<div class="max-w-6xl">
+    <div class="mb-6">
+        <h2 class="text-xl font-semibold text-gray-900">Gestion du Contenu</h2>
+        <p class="text-gray-600">Modifiez les titres et descriptions de votre site</p>
+    </div>
+
+    @if(session('success'))
+        <div class="mb-6 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+            {{ session('success') }}
+        </div>
+    @endif
+
+    <form action="{{ route('admin.content.update') }}" method="POST">
+        @csrf
+        @method('PUT')
+        
+        <div class="bg-white rounded-lg shadow">
+            <div class="p-6">
+                @foreach(\$contents as \$sectionName => \$sectionContents)
+                <div class="mb-6 p-4 border border-gray-200 rounded-lg">
+                    <div class="mb-4">
+                        <h3 class="text-lg font-medium text-gray-900 mb-2 capitalize">{{ str_replace('_', ' ', \$sectionName) }}</h3>
+                        <p class="text-sm text-gray-500">Modifiez le contenu de la section {{ \$sectionName }}</p>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        @foreach(\$sectionContents as \$content)
+                        <div>
+                            <label for="content_{{ \$content->id }}" class="block text-sm font-medium text-gray-700 mb-2">
+                                {{ ucfirst(str_replace('_', ' ', \$content->key)) }}
+                            </label>
+                            @if(in_array(\$content->key, ['description', 'subtitle', 'content']) || strlen(\$content->value) > 100)
+                            <textarea 
+                                id="content_{{ \$content->id }}"
+                                name="contents[{{ \$content->id }}][value]" 
+                                rows="3"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                                placeholder="Saisissez le contenu..."
+                            >{{ old('contents.' . \$content->id . '.value', \$content->value) }}</textarea>
+                            @else
+                            <input 
+                                type="text" 
+                                id="content_{{ \$content->id }}"
+                                name="contents[{{ \$content->id }}][value]" 
+                                value="{{ old('contents.' . \$content->id . '.value', \$content->value) }}"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                                placeholder="Saisissez le contenu..."
+                            >
+                            @endif
+                            <input type="hidden" name="contents[{{ \$content->id }}][id]" value="{{ \$content->id }}">
+                            @error('contents.' . \$content->id . '.value')
+                                <p class="mt-1 text-sm text-red-600">{{ \$message }}</p>
+                            @enderror
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+                @endforeach
+                
+                @if(\$contents->isEmpty())
+                <div class="text-center py-8">
+                    <div class="text-gray-400 text-lg mb-2">📝</div>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">Aucun contenu à modifier</h3>
+                    <p class="text-gray-500">Le contenu sera disponible après la génération complète du site.</p>
+                </div>
+                @endif
+            </div>
+            
+            @if(!\$contents->isEmpty())
+            <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 rounded-b-lg">
+                <div class="flex justify-between items-center">
+                    <p class="text-sm text-gray-600">
+                        {{ \$contents->flatten()->count() }} élément(s) de contenu dans {{ \$contents->count() }} section(s)
+                    </p>
+                    <button 
+                        type="submit" 
+                        class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                    >
+                        Sauvegarder les modifications
+                    </button>
+                </div>
+            </div>
+            @endif
+        </div>
+    </form>
+</div>
+@endsection
+CONTENT_EOF
+
     # Vue de connexion
     cat > resources/views/auth/login.blade.php << 'LOGIN_EOF'
 <!DOCTYPE html>
@@ -1577,7 +2061,103 @@ setup_laravel() {
     
     # Générer la documentation Swagger (si disponible)
     if php artisan list | grep -q "l5-swagger:generate"; then
-        php artisan l5-swagger:generate
+        log_info "Génération de la documentation Swagger..."
+        # Créer un fichier de configuration Swagger temporaire pour éviter les erreurs de namespace
+        cat > config/l5-swagger-temp.php << 'SWAGGER_EOF'
+<?php
+return [
+    'default' => 'default',
+    'documentations' => [
+        'default' => [
+            'api' => [
+                'title' => 'API Documentation',
+            ],
+            'routes' => [
+                'api' => 'api/documentation',
+            ],
+            'paths' => [
+                'use_absolute_path' => env('L5_SWAGGER_USE_ABSOLUTE_PATH', true),
+                'docs_json' => 'api-docs.json',
+                'docs_yaml' => 'api-docs.yaml',
+                'format_to_use_for_docs' => env('L5_FORMAT_TO_USE_FOR_DOCS', 'json'),
+                'annotations' => [
+                    base_path('app/Http/Controllers'),
+                ],
+            ],
+        ],
+    ],
+    'defaults' => [
+        'routes' => [
+            'docs' => 'docs',
+            'oauth2_callback' => 'api/oauth2-callback',
+            'middleware' => [
+                'api' => [],
+                'asset' => [],
+                'docs' => [],
+                'oauth2_callback' => [],
+            ],
+            'group_options' => [],
+        ],
+        'paths' => [
+            'docs' => storage_path('api-docs'),
+            'views' => base_path('resources/views/vendor/l5-swagger'),
+            'base' => env('L5_SWAGGER_BASE_PATH', null),
+            'swagger_ui_assets_path' => env('L5_SWAGGER_UI_ASSETS_PATH', 'vendor/swagger-api/swagger-ui/dist/'),
+            'excludes' => [],
+        ],
+        'scanOptions' => [
+            'analyser' => null,
+            'analysis' => null,
+            'processors' => [],
+            'pattern' => null,
+            'exclude' => [],
+            'open_api_spec_version' => env('L5_SWAGGER_OPEN_API_SPEC_VERSION', '3.0.0'),
+        ],
+        'securityDefinitions' => [
+            'securitySchemes' => [
+                'sanctum' => [
+                    'type' => 'apiKey',
+                    'description' => 'Enter token in format (Bearer <token>)',
+                    'name' => 'Authorization',
+                    'in' => 'header',
+                ],
+            ],
+            'security' => [
+                'sanctum' => [],
+            ],
+        ],
+        'generate_always' => env('L5_SWAGGER_GENERATE_ALWAYS', false),
+        'generate_yaml_copy' => env('L5_SWAGGER_GENERATE_YAML_COPY', false),
+        'proxy' => false,
+        'additional_config_url' => null,
+        'operations_sort' => env('L5_SWAGGER_OPERATIONS_SORT', null),
+        'validator_url' => null,
+        'ui' => [
+            'display' => [
+                'dark_mode' => env('L5_SWAGGER_UI_DARK_MODE', false),
+                'doc_expansion' => env('L5_SWAGGER_UI_DOC_EXPANSION', 'none'),
+                'filter' => env('L5_SWAGGER_UI_FILTERS', true),
+            ],
+            'authorization' => [
+                'persist_authorization' => env('L5_SWAGGER_UI_PERSIST_AUTHORIZATION', false),
+            ],
+        ],
+        'constants' => [
+            'L5_SWAGGER_CONST_HOST' => env('L5_SWAGGER_CONST_HOST', 'http://localhost'),
+        ],
+    ],
+];
+SWAGGER_EOF
+        # Tentative de génération avec gestion d'erreur améliorée
+        if ! php artisan l5-swagger:generate --config=l5-swagger-temp 2>/dev/null; then
+            # Si échec, essayer sans config spécifique
+            if ! php artisan l5-swagger:generate 2>/dev/null; then
+                log_info "⚠️  Avertissement: Documentation Swagger non générée (erreurs d'annotations ou de namespace)"
+                log_info "   Le site fonctionnera parfaitement sans la documentation Swagger"
+            fi
+        fi
+        # Nettoyer le fichier temporaire
+        rm -f config/l5-swagger-temp.php
     fi
     
     log_success "Laravel configuré!"
@@ -1654,6 +2234,7 @@ main() {
     configure_project
     install_dependencies
     fix_user_model
+    create_content_management
     apply_template
     setup_admin_panel
     setup_laravel

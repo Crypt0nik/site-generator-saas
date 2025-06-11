@@ -49,6 +49,8 @@ Le **Site Generator SAAS** est une solution complète permettant de générer au
 
 ### 🛠️ **Panel d'Administration Intégré**
 - 📊 **Dashboard** - Statistiques temps réel (clients, produits, CA)
+- 🎨 **CMS Intégré** - Édition de contenu sans code (NOUVEAU!)
+- 📝 **Gestion de textes** - Modification de tous les contenus via interface web
 - 🛍️ **Gestion Produits** - CRUD complet pour le catalogue
 - 📦 **Gestion Commandes** - Suivi et traitement des commandes
 - 👥 **Gestion Clients** - Base de données clients avec pagination
@@ -191,6 +193,37 @@ npm run dev:all
 - Sections : About, Portfolio, Services, Contact
 - Galerie projets interactive
 </details>
+
+---
+
+## 🎨 Système CMS Intégré (NOUVEAU!)
+
+### 🎯 **Édition de Contenu Sans Code**
+Chaque site généré inclut un système de gestion de contenu professionnel permettant aux utilisateurs de modifier tous les textes de leur site via une interface web intuitive.
+
+#### ✨ **Fonctionnalités CMS**
+- 📝 **Édition en temps réel** - Modification de tous les textes du site
+- 🎯 **Organisation par sections** - Hero, Features, CTA, etc.
+- 💾 **Sauvegarde automatique** - Persistance en base de données
+- 🔒 **Interface sécurisée** - Accès protégé par authentification
+- 📱 **Design responsive** - Interface d'administration moderne
+
+#### 🛠️ **Utilisation**
+```bash
+# Après génération et installation du site
+1. Connexion au site → /login
+2. Accès administration → /admin/content
+3. Modification des textes
+4. Sauvegarde automatique
+```
+
+#### 🎯 **Avantages Business**
+- 💰 **Valeur ajoutée** - Fonctionnalité premium différenciante
+- 👥 **Autonomie client** - Aucune dépendance technique
+- 🏆 **Avantage concurrentiel** - Plus qu'un simple générateur
+- 📈 **Satisfaction élevée** - Interface intuitive et moderne
+
+> 📖 **Documentation complète** : Consultez [GUIDE-CMS.md](GUIDE-CMS.md) pour tous les détails
 
 ---
 

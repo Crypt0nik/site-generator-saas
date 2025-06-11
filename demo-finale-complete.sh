@@ -1,13 +1,44 @@
 #!/bin/bash
 
-# 🎬 DÉMONSTRATION FINALE - Générateur SAAS Complet
-# Générateur de sites e-commerce avec panel d'administration intégré
+# 🎉 DÉMONSTRATION FINALE - Site Generator SAAS avec CMS
+# Script de présentation complète des fonctionnalités incluant le nouveau système CMS
 
 set -e
 
-echo "🎬 DÉMONSTRATION FINALE - Générateur SAAS de Sites E-commerce"
-echo "=============================================================="
+echo "🎉 SITE GENERATOR SAAS - DÉMONSTRATION FINALE AVEC CMS"
+echo "======================================================"
 echo ""
+
+# Couleurs pour l'affichage
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+PURPLE='\033[0;35m'
+CYAN='\033[0;36m'
+BOLD='\033[1m'
+NC='\033[0m'
+
+log_title() {
+    echo -e "${BOLD}${PURPLE}🎯 $1${NC}"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+}
+
+log_feature() {
+    echo -e "${CYAN}🚀 $1${NC}"
+}
+
+log_success() {
+    echo -e "${GREEN}✅ $1${NC}"
+}
+
+log_info() {
+    echo -e "${BLUE}ℹ️  $1${NC}"
+}
+
+log_highlight() {
+    echo -e "${YELLOW}⭐ $1${NC}"
+}
 
 # Couleurs pour les messages
 RED='\033[0;31m'
