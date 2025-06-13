@@ -871,7 +871,7 @@ TEMPLATE_EOF
                 <div class="text-center group">
                     <div class="w-24 h-24 mx-auto mb-4 rounded-full flex items-center justify-center transition-transform group-hover:scale-110" style="background-color: ${config.accentColor}">
                         <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 01-2 2z"></path>
                         </svg>
                     </div>
                     <h3 class="text-xl font-semibold mb-2 text-gray-900">Électronique</h3>
@@ -1154,7 +1154,7 @@ TEMPLATE_EOF
                 <div class="text-center p-8 rounded-xl border-2 border-gray-100 hover:border-gray-200 transition-colors">
                     <div class="w-16 h-16 mx-auto mb-6 rounded-full flex items-center justify-center" style="background-color: ${config.primaryColor}">
                         <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0H3a2 2 0 01-2-2V7a2 2 0 012-2h3m10 0h3a2 2 0 012 2v10a2 2 0 01-2 2h-3m-6 0a1 1 0 100-2 1 1 0 000 2z"></path>
                         </svg>
                     </div>
                     <h3 class="text-xl font-semibold mb-4 text-gray-900">Design UI/UX</h3>
@@ -1551,7 +1551,6 @@ ADMIN_LAYOUT_EOF
             <div class="p-3 rounded-full bg-primary/10">
                 <svg class="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
-                </svg>
             </div>
             <div class="ml-4">
                 <p class="text-sm font-medium text-gray-600">Clients</p>
@@ -1611,7 +1610,7 @@ ADMIN_LAYOUT_EOF
         <div class="p-6">
             <div class="text-center text-gray-500 py-8">
                 <svg class="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2v-6a2 2 0 00-2-2h-2a2 2 0 00-2 2v6z"></path>
                 </svg>
                 <p>Aucune activité récente</p>
             </div>
@@ -1661,25 +1660,115 @@ DASHBOARD_EOF
         <h2 class="text-xl font-semibold text-gray-900">Produits</h2>
         <p class="text-gray-600">Gérez votre catalogue de produits</p>
     </div>
-    <button class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+    <!-- Bouton pour afficher le formulaire -->
+    <button id="show-add-product" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
         Ajouter un produit
     </button>
 </div>
 
-<div class="bg-white rounded-lg shadow">
-    <div class="p-6">
-        <div class="text-center text-gray-500 py-12">
-            <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-            </svg>
-            <h3 class="text-lg font-medium text-gray-900 mb-2">Aucun produit</h3>
-            <p class="text-gray-500 mb-4">Commencez par ajouter votre premier produit</p>
-            <button class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
-                Ajouter un produit
-            </button>
+<!-- Formulaire d'ajout de produit (masqué par défaut) -->
+<div id="add-product-form" class="bg-white rounded-lg shadow p-6 mb-6" style="display:none;">
+    <h3 class="text-lg font-semibold mb-4">Ajouter un produit</h3>
+    <form id="productForm">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <input type="text" name="name" placeholder="Nom" class="px-3 py-2 border rounded" required>
+            <input type="text" name="description" placeholder="Description" class="px-3 py-2 border rounded" required>
+            <input type="number" name="price" placeholder="Prix (€)" class="px-3 py-2 border rounded" min="0" step="0.01" required>
+            <input type="number" name="stock_quantity" placeholder="Stock" class="px-3 py-2 border rounded" min="0" required>
         </div>
-    </div>
+        <div class="flex justify-end mt-4">
+            <button type="button" id="cancel-add-product" class="mr-2 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">Annuler</button>
+            <button type="submit" class="px-4 py-2 bg-primary text-white rounded hover:bg-primary/90">Ajouter</button>
+        </div>
+    </form>
 </div>
+
+<!-- Tableau des produits -->
+<table id="products-table" class="min-w-full divide-y divide-gray-200 bg-white rounded-lg shadow" style="display:none;">
+    <thead>
+        <tr>
+            <th>Nom</th>
+            <th>Description</th>
+            <th>Prix</th>
+            <th>Stock</th>
+        </tr>
+    </thead>
+    <tbody>
+        <!-- Les produits seront injectés ici -->
+    </tbody>
+</table>
+<div id="no-products" class="text-center text-gray-500 py-12" style="display:none;">
+    <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+    </svg>
+    <h3 class="text-lg font-medium text-gray-900 mb-2">Aucun produit</h3>
+    <p class="text-gray-500 mb-4">Commencez par ajouter votre premier produit</p>
+    <button id="show-add-product-2" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+        Ajouter un produit
+    </button>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const addForm = document.getElementById("add-product-form");
+    const showBtn = document.getElementById("show-add-product");
+    const showBtn2 = document.getElementById("show-add-product-2");
+    const cancelBtn = document.getElementById("cancel-add-product");
+    const productForm = document.getElementById("productForm");
+
+    function fetchProducts() {
+        fetch("/api/products")
+            .then(res => res.json())
+            .then(products => {
+                const tbody = document.querySelector("#products-table tbody");
+                const noProducts = document.getElementById("no-products");
+                tbody.innerHTML = "";
+                if (products.length === 0) {
+                    noProducts.style.display = "";
+                    document.getElementById("products-table").style.display = "none";
+                } else {
+                    noProducts.style.display = "none";
+                    document.getElementById("products-table").style.display = "";
+                    products.forEach(product => {
+                        tbody.innerHTML += '<tr>'
+                            + '<td>' + product.name + '</td>'
+                            + '<td>' + product.description + '</td>'
+                            + '<td>' + product.price + ' €</td>'
+                            + '<td>' + product.stock_quantity + '</td>'
+                            + '</tr>';
+                    });
+                }
+            });
+    }
+
+    fetchProducts();
+
+    if (showBtn) showBtn.onclick = () => { addForm.style.display = ""; };
+    if (showBtn2) showBtn2.onclick = () => { addForm.style.display = ""; };
+    if (cancelBtn) cancelBtn.onclick = () => { addForm.style.display = "none"; };
+
+    if (productForm) {
+        productForm.onsubmit = function (e) {
+            e.preventDefault();
+            const data = Object.fromEntries(new FormData(productForm).entries());
+            fetch("/api/products", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data)
+            })
+            .then(res => {
+                if (res.ok) {
+                    addForm.style.display = "none";
+                    productForm.reset();
+                    fetchProducts();
+                } else {
+                    alert("Erreur lors de l'ajout du produit.");
+                }
+            });
+        };
+    }
+});
+</script>
 @endsection
 PRODUCTS_EOF
 
@@ -1774,7 +1863,7 @@ ORDERS_EOF
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
             </svg>
             <h3 class="text-lg font-medium text-gray-900 mb-2">Aucun client</h3>
-            <p class="text-gray-500">Les clients apparaîtront ici après leur inscription</p>
+            <p class="text-gray-500 mb-4">Les clients apparaîtront ici après leur inscription</p>
         </div>
     </div>
 </div>
@@ -1841,19 +1930,19 @@ CUSTOMERS_EOF
                     <div class="space-y-3">
                         <label class="flex items-center">
                             <input type="checkbox" {{ (\$config['features']['auth'] ?? ${config.features.auth ? 'true' : 'false'}) ? 'checked' : '' }} class="rounded border-gray-300 text-primary focus:ring-primary">
-                            <span class="ml-2 text-sm text-gray-700">Authentification</span>
+                            <span class="ml-2 block text-sm text-gray-900">Authentification</span>
                         </label>
                         <label class="flex items-center">
                             <input type="checkbox" {{ (\$config['features']['payment'] ?? ${config.features.payment ? 'true' : 'false'}) ? 'checked' : '' }} class="rounded border-gray-300 text-primary focus:ring-primary">
-                            <span class="ml-2 text-sm text-gray-700">Paiements</span>
+                            <span class="ml-2 block text-sm text-gray-900">Paiements</span>
                         </label>
                         <label class="flex items-center">
                             <input type="checkbox" {{ (\$config['features']['blog'] ?? ${config.features.blog ? 'true' : 'false'}) ? 'checked' : '' }} class="rounded border-gray-300 text-primary focus:ring-primary">
-                            <span class="ml-2 text-sm text-gray-700">Blog</span>
+                            <span class="ml-2 block text-sm text-gray-900">Blog</span>
                         </label>
                         <label class="flex items-center">
                             <input type="checkbox" {{ (\$config['features']['analytics'] ?? ${config.features.analytics ? 'true' : 'false'}) ? 'checked' : '' }} class="rounded border-gray-300 text-primary focus:ring-primary">
-                            <span class="ml-2 text-sm text-gray-700">Analytics</span>
+                            <span class="ml-2 block text-sm text-gray-900">Analytics</span>
                         </label>
                     </div>
                 </div>
@@ -1940,7 +2029,7 @@ SETTINGS_EOF
                 <div class="text-center py-8">
                     <div class="text-gray-400 text-lg mb-2">📝</div>
                     <h3 class="text-lg font-medium text-gray-900 mb-2">Aucun contenu à modifier</h3>
-                    <p class="text-gray-500">Le contenu sera disponible après la génération complète du site.</p>
+                    <p class="text-gray-500 mb-4">Le contenu sera disponible après la génération complète du site.</p>
                 </div>
                 @endif
             </div>
